@@ -1,23 +1,12 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 
 // Register
 export const register = async (req, res) => {
-  const {
-    name,
-    email,
-    password,
-    imageUrl,
-    role,
-    bloodType,
-    location,
-    lastDonationDate,
-    healthStatus,
-    isAvailableToDonate,
-    consentToShare,
-    donationHistory,
-  } = req.body;
+  const { name, email, password, bloodType, address } = req.body;
 
   try {
     if (await User.findOne({ email }))
@@ -28,41 +17,13 @@ export const register = async (req, res) => {
       name,
       email,
       password: hashedPassword,
-      imageUrl,
-      role,
       bloodType,
-      location,
-      lastDonationDate,
-      healthStatus,
-      isAvailableToDonate,
-      consentToShare,
-      donationHistory,
+      address,
     });
 
-    const obj = newUser.toObject();
-
-    const userData = {
-      _id: obj._id,
-      name: obj.name,
-      email: obj.email,
-      imageUrl: obj.imageUrl,
-      role: obj.role,
-      bloodType: obj.bloodType,
-      location: obj.location,
-      lastDonationDate: obj.lastDonationDate,
-      healthStatus: obj.healthStatus,
-      isAvailableToDonate: obj.isAvailableToDonate,
-      consentToShare: obj.consentToShare,
-      donationHistory: Array.isArray(obj.donationHistory)
-        ? obj.donationHistory
-        : [],
-      createdAt: obj.createdAt,
-      updatedAt: obj.updatedAt,
-    };
-
-    res
-      .status(201)
-      .json({ message: "Registered successfully", user: userData });
+    res.status(201).json({
+      message: "Registered successfully",
+    });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
@@ -84,19 +45,83 @@ export const login = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
 
-    const obj = user.toObject();
-
-    const { password: _, donationHistory: __, ...userData } = obj;
-
-    res.status(200).json({ token, user: userData });
+    res.status(200).json({ token });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
+// Forgot Password
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "user not found",
+      });
+    }
+
+    // تقليل طول الرمز إلى 20 بايت (40 حرف)
+    const resetToken = crypto.randomBytes(20).toString("hex");
+
+    user.passwordResetToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    // إرجاع الرمز نفسه للاختبار (بدون تشفير)
+    res.status(200).json({
+      status: "success",
+      message: "use the link below to reset your password",
+      resetToken, // إرجاع الرمز غير المشفر للاختبار
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "internal server error", error: err.message });
+  }
+};
+
+// Reset Password
+export const resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+    const user = await User.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "token is invalid or has expired",
+      });
+    }
+
+    user.password = await bcrypt.hash(password, 12);
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    res.status(200).json({
+      message: "password has been reset successfully",
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "internal server error", error: err.message });
+  }
+};
+
 // Log Out
 export const logout = (req, res) => {
-  res
-    .status(200)
-    .json({ message: "User logged out (client should remove token)" });
+  res.status(200).json({ message: "User logged out" });
 };
