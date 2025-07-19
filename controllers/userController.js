@@ -67,7 +67,6 @@ export const updateProfile = async (req, res) => {
       }
     );
 
-    // إعادة ترتيب الحقول
     const responseData = {
       _id: updatedUser._id,
       firstName: updatedUser.firstName,
