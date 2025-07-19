@@ -2,9 +2,11 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true, select: false },
+    profilePicture: { type: String },
     role: {
       type: String,
       enum: ["donor", "recipient", "admin"],
@@ -19,6 +21,7 @@ const userSchema = new mongoose.Schema(
       },
     },
     address: { type: String },
+    phoneNumber: { type: String },
     passwordResetToken: { type: String },
     passwordResetExpires: { type: Date },
   },

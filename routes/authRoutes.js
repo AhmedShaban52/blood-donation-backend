@@ -17,4 +17,5 @@ router.patch("/resetPassword/:token", resetPassword);
 router.post("/logout", logout);
 router.get("/me", protect, (req, res) => res.json(req.user));
 
+
 export default router;

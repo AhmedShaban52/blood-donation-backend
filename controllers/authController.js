@@ -2,7 +2,6 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
 
 // Register
 export const register = async (req, res) => {
@@ -23,6 +22,7 @@ export const register = async (req, res) => {
 
     res.status(201).json({
       message: "Registered successfully",
+      status: 201,
     });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
@@ -45,7 +45,7 @@ export const login = async (req, res) => {
       expiresIn: process.env.JWT_EXPIRES_IN,
     });
 
-    res.status(200).json({ token });
+    res.status(200).json({ token, message: "Successful login", status: 200 });
   } catch (err) {
     res.status(500).json({ message: "Server error", error: err.message });
   }
