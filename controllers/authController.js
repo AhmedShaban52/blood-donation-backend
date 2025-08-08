@@ -5,19 +5,34 @@ import crypto from "crypto";
 
 // Register
 export const register = async (req, res) => {
-  const { name, email, password, bloodType, address } = req.body;
+  const {
+    firstName,
+    lastName,
+    email,
+    password,
+    bloodType,
+    address,
+    phoneNumber,
+    role, // optional
+    profilePicture, // optional
+  } = req.body;
 
   try {
     if (await User.findOne({ email }))
       return res.status(400).json({ message: "Email already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 12);
+
     const newUser = await User.create({
-      name,
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
       bloodType,
       address,
+      phoneNumber,
+      role,
+      profilePicture,
     });
 
     res.status(201).json({
@@ -28,7 +43,6 @@ export const register = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
 // Login
 export const login = async (req, res) => {
   const { email, password } = req.body;
