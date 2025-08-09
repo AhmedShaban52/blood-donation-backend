@@ -17,7 +17,7 @@ await connectCloudinary();
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 
-app.get("/", (req, res) => res.send("API Working"));
+app.get("/", (req, res) => res.json({ message: "API Working" }));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
